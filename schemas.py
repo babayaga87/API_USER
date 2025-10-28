@@ -5,8 +5,6 @@ from uuid import UUID
 from datetime import datetime, date
 
 
-
-
 # --- PHẦN MỚI CHO VEHICLE (TOÀN BỘ) ---
 
 class VehicleBase(BaseModel):
@@ -20,7 +18,7 @@ class VehicleCreate(VehicleBase):
 
 class VehicleUpdate(BaseModel):
     # Khi cập nhật, mọi thứ đều là tùy chọn
-    license_plate: Optional[str] = None
+    #license_plate: Optional[str] = None
     model: Optional[str] = None
     color: Optional[str] = None
     year: Optional[int] = None
@@ -40,7 +38,7 @@ class Vehicle(VehicleBase):
 
 class DriverProfileBase(BaseModel):
     license_number: str
-    license_expiry: Optional[date] = None
+    #license_expiry: Optional[date] = None
 
 class DriverProfileCreate(DriverProfileBase):
     pass
@@ -58,9 +56,10 @@ class DriverProfile(DriverProfileBase):
 
 class DriverProfileUpdate(BaseModel):
     license_number: Optional[str] = None
-    license_expiry: Optional[date] = None
+    #license_expiry: Optional[date] = None
     approval_status: Optional[str] = None # Thường admin mới được sửa cái này
     profile_photo_url: Optional[str] = None
+
 
 # --- SCHEMAS CHO USER ---
 
@@ -69,6 +68,7 @@ class UserBase(BaseModel):
     email: EmailStr
     full_name: str
     phone_number: Optional[str] = None
+    firebase_uid: Optional[str] = None
 
 class UserCreate(UserBase):
     # Khi tạo user, chúng ta chỉ cần thông tin base
@@ -103,3 +103,11 @@ class UserUpdate(BaseModel):
     full_name: Optional[str] = None
     phone_number: Optional[str] = None
     is_active: Optional[bool] = None
+
+class DriverSignUp(UserCreate):
+    """
+    Schema dùng riêng cho endpoint đăng ký Driver.
+    Kế thừa email, full_name, phone_number, firebase_uid từ UserCreate.
+    """
+    license_number: str
+    license_expiry: Optional[date] = None

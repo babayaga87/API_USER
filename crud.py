@@ -2,6 +2,7 @@
 from sqlalchemy.orm import Session
 from uuid import UUID
 import models, schemas
+import uuid
 
 # --- CRUD CHO USER ---
 
@@ -39,28 +40,87 @@ def delete_user(db: Session, user_id: UUID):
     return db_user
 
 def create_user(db: Session, user: schemas.UserCreate):
-    # Tạo user KHÔNG có mật khẩu.
-    # Dịch vụ auth của bạn sẽ chịu trách nhiệm 'cập nhật'
-    # cột password_hash sau đó.
+    """Tạo user HÀNH KHÁCH (passenger)"""
+    
+    # Lấy toàn bộ dữ liệu từ schema (bao gồm cả firebase_uid)
+    user_data = user.model_dump() 
+    
+    # Vẫn tự tạo ID nội bộ (UUID)
+    new_id = str(uuid.uuid4())
+    
     db_user = models.User(
-        email=user.email,
-        full_name=user.full_name,
-        phone_number=user.phone_number,
-        password_hash=None, # Rất quan trọng: Bỏ qua mật khẩu
-        role='passenger' # Mặc định
+        id=new_id,          # <-- SỬA LỖI 1: Gán ID nội bộ
+        **user_data,        # <-- SỬA LỖI 2: Gán tất cả data (email, full_name, firebase_uid...)
+        role='passenger'
     )
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
     return db_user
 
+
+def create_driver(db: Session, driver_data: schemas.DriverSignUp):
+    """
+    Tạo một TÀI XẾ (driver) hoàn chỉnh.
+    Tự động tạo User (role=driver) và DriverProfile.
+    """
+    
+    # Thêm 'firebase_uid' vào danh sách include
+    user_data_dict = driver_data.model_dump(
+        include={'email', 'full_name', 'phone_number', 'firebase_uid'} 
+    )
+    
+    # Vẫn tự tạo ID nội bộ (UUID)
+    new_id = str(uuid.uuid4())
+    
+    db_user = models.User(
+        id=new_id, # ID nội bộ (UUID)
+        **user_data_dict, # Gán data (bao gồm firebase_uid)
+        password_hash=None,
+        role='driver'
+    )
+    
+    profile_data_dict = driver_data.model_dump(
+        include={'license_number', 'license_expiry'}
+    )
+    
+    db_profile = models.DriverProfile(
+        **profile_data_dict,
+        user=db_user # Liên kết profile với user vừa tạo
+    )
+    
+    # Add cả hai vào session và commit 1 lần
+    db.add(db_user)
+    db.add(db_profile)
+    db.commit()
+    
+    db.refresh(db_user)
+    return db_user
+
 # --- CRUD CHO DRIVER PROFILE ---
 
 def create_driver_profile(db: Session, profile: schemas.DriverProfileCreate, user_id: UUID):
-    db_profile = models.DriverProfile(**profile.dict(), user_id=user_id)
+    db_user = db.query(models.User).filter(models.User.id == user_id).first()
+
+    if not db_user:
+        return None 
+
+    profile_data = profile.dict() 
+    
+    db_profile = models.DriverProfile(**profile_data, user_id=user_id)
     db.add(db_profile)
-    db.commit()
-    db.refresh(db_profile)
+
+
+    db_user.role = "driver"
+    db.add(db_user)# Thông báo cho session biết là object này đã thay đổi
+
+    try:
+        db.commit()
+        db.refresh(db_profile) # Làm mới để lấy dữ liệu từ CSDL (như ID mới)
+    except Exception as e:
+        db.rollback() # Hoàn tác nếu có lỗi
+        raise e
+    
     return db_profile
 
 def get_driver_profile(db: Session, profile_id: UUID):
