@@ -1,11 +1,11 @@
 '''
-Code → Venv → Pip Install → Uvicorn Run → Test (Docs/Postman) → (Lặp lại)
+        Code → Venv → Pip Install → Uvicorn Run → Test (Docs/Postman) → (Lặp lại)
 
-python -m venv venv
+        python -m venv venv
 
-.\venv\Scripts\activate 
+        .venv\Scripts\activate       
 
-uvicorn main:app --reload
+        uvicorn main:app --reload
 '''
 
 

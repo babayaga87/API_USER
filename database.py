@@ -7,7 +7,7 @@ from sqlalchemy.orm import sessionmaker
 # SQLALCHEMY_DATABASE_URL = "postgresql://postgres:mysecretpassword@localhost:5432/user_db"
 
 # SỬ DỤNG DÒNG SQLITE NÀY THAY THẾ:
-SQLALCHEMY_DATABASE_URL = "postgresql://postgres:Khang#890kk2@localhost:5432/user_db"  # Sẽ tạo file user.db
+SQLALCHEMY_DATABASE_URL = "postgresql://postgres:@localhost:5432/user_db"  # Sẽ tạo file user.db
 
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,    
